@@ -1,0 +1,89 @@
+# Week 3 Lab — Experiment Log
+Run: 2026-09-02T22:14:01.701276+00:00Z
+
+## Experiment 2: Temperature / Sampling Divergence
+**Note:** `temperature` was found to be fully removed from the typed `anthropic` SDK interface as of v1.3.0 (confirmed via signature inspection, not model-specific) -- replaced by an `effort` reasoning-budget control, which is NOT equivalent to sampling temperature. This experiment sends `temperature` via `extra_body` to test empirically whether the underlying API still honors it despite the SDK dropping it from its typed interface.
+
+Prompt (fixed): `In exactly one sentence, describe what a firewall does.`
+
+### Temperature = 0.0
+- Run 1: A firewall monitors and filters incoming and outgoing network traffic based on predetermined security rules, acting as a barrier between a trusted internal network and untrusted external networks to block unauthorized access while permitting legitimate communications.
+- Run 2: A firewall monitors and filters incoming and outgoing network traffic based on predetermined security rules, acting as a barrier between a trusted internal network and untrusted external networks to block unauthorized access while permitting legitimate communications.
+- Run 3: A firewall monitors and filters incoming and outgoing network traffic based on predetermined security rules, acting as a barrier between a trusted internal network and untrusted external networks to block unauthorized access while permitting legitimate communications.
+
+**Unique outputs out of 3 runs: 1**
+
+### Temperature = 0.7
+- Run 1: A firewall monitors and filters incoming and outgoing network traffic based on predetermined security rules, acting as a barrier between a trusted internal network and untrusted external networks to block unauthorized access while permitting legitimate communications.
+- Run 2: A firewall monitors and filters incoming and outgoing network traffic based on predetermined security rules, acting as a barrier between a trusted internal network and untrusted external networks to block unauthorized access while permitting legitimate communication.
+- Run 3: A firewall monitors and filters incoming and outgoing network traffic based on predetermined security rules, acting as a barrier between a trusted internal network and untrusted external networks to block unauthorized access while permitting legitimate communication.
+
+**Unique outputs out of 3 runs: 2**
+
+### Temperature = 1.0
+- Run 1: A firewall monitors and filters incoming and outgoing network traffic based on predetermined security rules, acting as a barrier between a trusted internal network and untrusted external networks to block unauthorized access while permitting legitimate communication.
+- Run 2: A firewall monitors and filters incoming and outgoing network traffic based on predetermined security rules, acting as a barrier between a trusted internal network and untrusted external networks to block unauthorized access while permitting legitimate communications.
+- Run 3: A firewall monitors and filters incoming and outgoing network traffic based on predetermined security rules, acting as a barrier between a trusted internal network and untrusted external networks to block unauthorized access while permitting legitimate communications.
+
+**Unique outputs out of 3 runs: 2**
+
+## Experiment 3: Prompt Structure Sensitivity
+### Framing: bare_question
+User prompt: `Is it safe to store API keys in a public GitHub repo?`
+
+Output:
+```
+# No — Storing API Keys in a Public GitHub Repo Is **Never Safe**
+
+This is a well-known and serious security mistake. Here's why:
+
+## What Can Go Wrong
+
+- **Bots actively scan** public repos for exposed keys (often within seconds of a commit)
+- Attackers can use your keys to:
+  - **Run up charges** on paid services (AWS, cloud APIs, etc.)
+  - **Access or steal data** from your accounts
+  - **Send spam or malware** through your services
+  - **Pivot to deeper attacks** on your infrastructure
+
+## What You Should Do Instead
+
+### ✅ Safe Alternatives
+- **Environment variables** — Store keys in `.env` files and load them at runtime
+- **Secrets managers** — Use tools like AWS Secrets Manager, HashiCorp Vault, or Doppler
+- **CI/CD secrets**
+```
+
+### Framing: role_framed
+System prompt: `You are a strict senior security engineer doing a code review. You do not soften bad practices.`
+User prompt: `Is it safe to store API keys in a public GitHub repo?`
+
+Output:
+```
+**No. Absolutely not. This is a critical security violation.**
+
+Storing API keys in a public GitHub repository is one of the most common and dangerous mistakes in software development. There is no nuance here.
+
+## What Happens When You Do This
+
+- **Automated bots** scrape GitHub continuously for exposed secrets. Your keys will be compromised within **minutes**, not days.
+- Attackers use them to rack up charges on your cloud accounts, exfiltrate data, send spam, or pivot deeper into your infrastructure.
+- Once it's in Git history, **deleting the file is not enough**. The key remains in the commit history permanently unless you rewrite it.
+
+## What You Must Do Instead
+
+1. **Environment variables** — Load keys from the environment at runtime.
+2. **Secret managers** — Use AWS Secrets Manager, HashiCorp Vault, GCP Secret Manager, Azure Key Vault
+```
+
+### Framing: structured_reasoning
+User prompt: `Is it safe to store API keys in a public GitHub repo? Answer in this exact format:
+Verdict: <one word>
+Risk: <one sentence>
+Fix: <one sentence>`
+
+Output:
+```
+Verdict: No
+Risk: Exposed API keys can be scraped by bots within seconds, leading to unauthorized access, data breaches, and potentially massive financial charges on your accounts.
+Fix: Store API keys in environment variables or a secrets manager and add your configuration files to `.gitignore` to prevent accidental commits.
